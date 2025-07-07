@@ -1,43 +1,20 @@
-# 3D Motion and Its 2D Projection {#sec-3D_motion_and_its_2D_projection}
+# การเคลื่อนไหวแบบ 3 มิติ และภาพฉาย 2 มิติ {#sec-3D_motion_and_its_2D_projection}
 
-## Introduction
+## บทนำ
 
-As objects move in the world, or as the camera moves, the projection of
-the dynamic scene into the two-dimensional (2D) camera plane produces a
-sequence of temporally varying pixel brightness. Before diving into how
-to estimate motion from pixels, it is useful to understand the image
-formation process. Studying how three-dimensional (3D) motion projects
-into the camera will allow us to understand what the difference is
-between a moving camera or a moving object and what types of constraints
-one might be able to use to estimate motion.
+เมื่อวัตถุในโลกเคลื่อนที่ หรือเมื่อกล้องเคลื่อนที่ ภาพฉายของฉากที่มีการเคลื่อนไหวลงบนระนาบภาพ 2 มิติของกล้องจะสร้างลำดับความสว่างของพิกเซลที่เปลี่ยนแปลงไปตามเวลา ก่อนที่จะลงรายละเอียดเกี่ยวกับวิธีการประมาณค่าการเคลื่อนไหวจากพิกเซล การทำความเข้าใจกระบวนการสร้างภาพถ่ายจึงเป็นประโยชน์ การศึกษาว่าการเคลื่อนไหวแบบสามมิติ (3D) ฉายลงบนกล้องได้อย่างไร จะช่วยให้เราเข้าใจถึงความแตกต่างระหว่างกล้องที่กำลังเคลื่อนที่กับวัตถุที่กำลังเคลื่อนที่ และประเภทของข้อจำกัดที่เราอาจนำมาใช้ในการประมาณค่าการเคลื่อนไหวได้
 
-## 3D Motion and Its 2D Projection {#d-motion-and-its-2d-projection}
+## การเคลื่อนไหวแบบ 3 มิติ และภาพฉาย 2 มิติ {#d-motion-and-its-2d-projection}
 
-A 3D point will follow a trajectory $\mathbf{P}(t) = (X(t),Y(t),Z(t))$,
-in camera coordinates (@fig-optical_flow_basic_motion_point). As the
-point moves, it has an instantaneous 3D velocity of
-$\dot{\mathbf{P}} = (\dot{X}(t), \dot{Y}(t), \dot{Z}(t))$. The
-projection of this point into the image plane location is
-$\mathbf{p}(t) = (x(t),y(t))$ and its projection will move with the 2D
-instantaneous velocity $\dot{\mathbf{p}} = (\dot{x}(t), \dot{y}(t))$,
-where all the derivatives are done with respect to time, $t$.
+จุด 3 มิติจะเคลื่อนที่ตามวิถี $\mathbf{P}(t) = (X(t),Y(t),Z(t))$ ในระบบพิกัดกล้อง (@fig-optical_flow_basic_motion_point) ขณะที่จุดเคลื่อนที่ จุดนั้นจะมีความเร็ว 3 มิติ ณ ขณะหนึ่งคือ $\dot{\mathbf{P}} = (\dot{X}(t), \dot{Y}(t), \dot{Z}(t))$ ภาพฉายของจุดนี้ลงบนระนาบภาพที่ตำแหน่ง $\mathbf{p}(t) = (x(t),y(t))$ และภาพฉายของจุดนั้นจะเคลื่อนที่ด้วยความเร็ว 2 มิติ ณ ขณะหนึ่งคือ $\dot{\mathbf{p}} = (\dot{x}(t), \dot{y}(t))$ โดยอนุพันธ์ทั้งหมดเป็นไปตามเวลา $t$
 
-![A 3D point, $\mathbf{P}$, moving in the world projects a 2D moving point, $\mathbf{p}$, into the camera plane.](figures/optical_flow/basic_motion_point.png){width="50%" #fig-optical_flow_basic_motion_point}
+![จุด 3 มิติ $\mathbf{P}$ ที่เคลื่อนที่ในโลกจะฉายจุด 2 มิติ $\mathbf{p}$ ที่เคลื่อนที่ลงบนระนาบภาพของกล้อง](figures/optical_flow/basic_motion_point.png){width="50%" #fig-optical_flow_basic_motion_point}
 
-Using the equations of perspective projection $x=f X/Z$ and $y=f Y/Z$
-(assuming that the camera is at the origin of the world-coordinate
-system), we can derive the equations of how the instantaneous velocity
-in the camera plane relates to the point motion in 3D world coordinates:
+เมื่อใช้สมการภาพฉายแบบ Perspective $x=f X/Z$ และ $y=f Y/Z$ (สมมติว่ากล้องอยู่ที่จุดกำเนิดของระบบพิกัดโลก) เราสามารถหาความสัมพันธ์ระหว่างความเร็ว ณ ขณะหนึ่งบนระนาบภาพกับความเคลื่อนไหวของจุดในระบบพิกัดโลก 3 มิติได้ดังสมการ:
 $$\begin{aligned}
 \dot{x} &= f \frac{\dot{X} Z - \dot{Z} X}{Z^2} = \frac{f \dot{X} - \dot{Z} x}{Z}\\
 \dot{y} &= f \frac{\dot{Y} Z - \dot{Z} Y}{Z^2} = \frac{f \dot{Y} - \dot{Z} y}{Z} 
-\end{aligned}$$ The second expression is obtained by using $x=f \, X/Z$
-and $y=f \, Y/Z$, which removes the dependency on the world coordinates
-$X$ and $Y$. Note that $f$ is the focal length. In many derivations, the
-notation is simplified by setting the focal length $f=1$. Here we will
-keep it to make explicit which factors depend on the camera parameters
-and which ones do not. We can write the last two equations in matrix
-form as: 
+\end{aligned}$$ การแสดงออกที่สองได้มาจากการใช้ $x=f \, X/Z$ และ $y=f \, Y/Z$ ซึ่งเป็นการตัดการพึ่งพาระบบพิกัดโลก $X$ และ $Y$ ออกไป โปรดทราบว่า $f$ คือความยาวโฟกัส ในการหาค่าหลายครั้ง สัญลักษณ์จะถูกลดความซับซ้อนโดยการตั้งค่าความยาวโฟกัส $f=1$ ที่นี่เราจะคงไว้เพื่อแสดงให้เห็นอย่างชัดเจนว่าปัจจัยใดขึ้นอยู่กับพารามิเตอร์กล้อง และปัจจัยใดไม่ขึ้น เราสามารถเขียนสองสมการสุดท้ายในรูปแบบเมทริกซ์ได้ดังนี้: 
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -56,12 +33,7 @@ f & 0 & -x \\
 \end{bmatrix}
 \end{aligned}$${#eq-motionprojection} 
 
-This expression reveals a number of interesting
-properties of the optical flow and how it relates to motion in the
-world. For instance, points that move parallel to the camera plane
-($\dot{Z} = 0$) will project to a motion parallel to the motion in 3D
-but with a magnitude that will be inversely proportional to the distance
-$Z$: 
+การแสดงออกนี้เผยให้เห็นคุณสมบัติที่น่าสนใจหลายประการของ Optical Flow และความสัมพันธ์กับการเคลื่อนที่ในโลก ตัวอย่างเช่น จุดที่เคลื่อนที่ขนานกับระนาบกล้อง ($\dot{Z} = 0$) จะถูกฉายเป็นภาพเคลื่อนไหวที่ขนานกับการเคลื่อนที่ใน 3 มิติ แต่มีขนาดที่แปรผกผันกับระยะทาง $Z$: 
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -75,8 +47,7 @@ $$\begin{aligned}
 \end{bmatrix}
 \end{aligned}$${#eq-parallelmotion}
 
-For points moving parallel to the $Z$ axis ($\dot{X} = \dot{Y} = 0$) we
-get: 
+สำหรับจุดที่เคลื่อนที่ขนานกับแกน $Z$ ($\dot{X} = \dot{Y} = 0$) เราได้: 
 $$\begin{aligned}
 \begin{bmatrix}
 \dot{x} \\
@@ -87,79 +58,43 @@ $$\begin{aligned}
 x \\
 y
 \end{bmatrix}
-\end{aligned}$${#eq-forward_objects} Points at the same distance $Z$ from the camera, moving
-away or towards the camera ($\dot{Z} \neq 0$, and
-$\dot{X} = \dot{Y} = 0$), with the same velocity will project into
-points moving at different velocities on the image plane.
+\end{aligned}$${#eq-forward_objects} จุดที่อยู่ห่างจากกล้องในระยะเท่ากัน $Z$ ที่กำลังเคลื่อนที่ออกจากหรือเข้าหากล้อง ($\dot{Z} \neq 0$ และ $\dot{X} = \dot{Y} = 0$) ด้วยความเร็วเท่ากัน จะถูกฉายเป็นจุดที่เคลื่อนที่ด้วยความเร็วที่แตกต่างกันบนระนาบภาพ
 
-@fig-examples_3d_moving_points illustrates the geometry of the
-projection of 3D motion into the camera for points moving parallel to
-the camera plane (@fig-examples_3d_moving_points\[left\]) and parallel
-to the optical axis of the camera
-(@fig-examples_3d_moving_points\[right\]). The arrows at the image plane
-show the imaged scene velocities.
+@fig-examples_3d_moving_points แสดงให้เห็นเรขาคณิตของภาพฉายการเคลื่อนไหวแบบ 3 มิติลงบนกล้องสำหรับจุดที่เคลื่อนที่ขนานกับระนาบกล้อง (@fig-examples_3d_moving_points\[left\]) และขนานกับแกน Optical Axis ของกล้อง (@fig-examples_3d_moving_points\[right\]) ลูกศรบนระนาบภาพแสดงถึงความเร็วของฉากที่ถูกฉาย
 
-![(left) Geometry of the projection of 3D motion into the camera for points moving parallel to the camera plane, and (right) parallel to the optical axis of the camera.](figures/optical_flow/examples_3d_moving_points.png){width="100%" #fig-examples_3d_moving_points}
+![(ซ้าย) เรขาคณิตของภาพฉายการเคลื่อนไหวแบบ 3 มิติลงบนกล้องสำหรับจุดที่เคลื่อนที่ขนานกับระนาบกล้อง และ (ขวา) ขนานกับแกน Optical Axis ของกล้อง](figures/optical_flow/examples_3d_moving_points.png){width="100%" #fig-examples_3d_moving_points}
 
-Let's examine a few scenarios in a bit more detail to gain some
-familiarity with the relationship between 3D motion and the projected 2D
-motion field.
+มาพิจารณาบางสถานการณ์โดยละเอียดเพื่อทำความเข้าใจความสัมพันธ์ระหว่างการเคลื่อนไหวแบบ 3 มิติกับสนามการเคลื่อนไหวแบบ 2 มิติที่ถูกฉาย
 
-### Vanishing Point
+### จุดศูนย์เล็ง (Vanishing Point)
 
-Let's consider a point moving in a straight line in 3D with constant
-velocity over time: $\dot{\mathbf{P}} = (V_X, V_Y, V_Z)^\mathsf{T}$. At
-each time instant, $t$, the point location will be
-$\mathbf{P}(t) = (X+V_Xt, Y+V_Yt, Z+V_Zt)^\mathsf{T}$, and its 2D
-projection: 
+มาพิจารณาจุดที่กำลังเคลื่อนที่เป็นเส้นตรงใน 3 มิติด้วยความเร็วคงที่เมื่อเวลาผ่านไป: $\dot{\mathbf{P}} = (V_X, V_Y, V_Z)^\mathsf{T}$ ณ แต่ละช่วงเวลา $t$ ตำแหน่งของจุดจะเป็น $\mathbf{P}(t) = (X+V_Xt, Y+V_Yt, Z+V_Zt)^\mathsf{T}$ และภาพฉาย 2 มิติของจุดนั้น: 
 
 $$\begin{aligned}
 x(t) &= f \frac{X + V_X t}{Z + V_Z t}\\
 y(t) &= f \frac{Y + V_Y t}{Z + V_Z t} 
 \end{aligned}$$ 
 
-If $\dot{Z}=0$, then the projected point will move with
-constant velocity over time, as shown in equation (@eq-parallelmotion).
-If $\dot{Z} \neq  0$, then, as time goes to infinity, the point will
-converge to a **vanishing point**: 
+ถ้า $\dot{Z}=0$ จุดที่ถูกฉายจะเคลื่อนที่ด้วยความเร็วคงที่เมื่อเวลาผ่านไป ดังแสดงในสมการ (@eq-parallelmotion) ถ้า $\dot{Z} \neq 0$ เมื่อเวลาเข้าสู่อนันต์ จุดจะลู่เข้าสู่ **จุดศูนย์เล็ง (vanishing point)**: 
 
 $$\begin{aligned}
 \lim_{t \to \infty} x(t)  &= f \frac{V_X}{V_Z} = x_{\infty}\\
 \lim_{t \to \infty} y(t) &= f \frac{V_Y}{V_Z} = y_{\infty}
 \end{aligned}$${#eq-motionvanishingpoint}
 
-The following sketch (@fig-flying_bird) shows Gibson's bird (see
-@fig-gibson_bird) flying away from the camera along a straight line. In
-the camera the bird gets smaller as it flies away until it disappears at
-the vanishing point. In this drawing the vanishing point is within the
-view of the camera.
+ภาพร่างต่อไปนี้ (@fig-flying_bird) แสดงนกของ Gibson (ดู @fig-gibson_bird) กำลังบินออกห่างจากกล้องไปตามเส้นตรง ในภาพถ่าย นกจะเล็กลงเมื่อมันบินออกไปจนกระทั่งมันหายไปที่จุดศูนย์เล็ง ในภาพวาดนี้ จุดศูนย์เล็งอยู่ภายในมุมมองของกล้อง
 
-![Projection onto the camera plane of the sequence produced by a bird flying away. The bird will vanish at the **vanishing point**](figures/optical_flow/flying_bird.png){width="100%" #fig-flying_bird}
+![ภาพฉายบนระนาบภาพของลำดับภาพที่เกิดจากนกที่กำลังบินออกไป นกจะหายไปที่ **จุดศูนย์เล็ง**](figures/optical_flow/flying_bird.png){width="100%" #fig-flying_bird}
 
-The vanishing point is the location
-$\mathbf{p}_{\infty}=(x_{\infty}, y_{\infty})^\mathsf{T}$ where the
-moving point slowly converges to. The location of the vanishing point is
-independent of the point location at time $t=0$, and it only depends on
-the 3D velocity vector, $\mathbf{V}$. Therefore, if the scene contains
-multiple points at different locations moving with the same velocity,
-they will converge to the same vanishing point.
+จุดศูนย์เล็งคือตำแหน่ง $\mathbf{p}_{\infty}=(x_{\infty}, y_{\infty})^\mathsf{T}$ ที่จุดที่กำลังเคลื่อนที่ค่อยๆ ลู่เข้า ตำแหน่งของจุดศูนย์เล็งไม่ขึ้นอยู่กับตำแหน่งของจุดที่เวลา $t=0$ และขึ้นอยู่กับเวกเตอร์ความเร็ว 3 มิติ $\mathbf{V}$ เท่านั้น ดังนั้น หากฉากประกอบด้วยหลายจุดที่ตำแหน่งต่างกันซึ่งเคลื่อนที่ด้วยความเร็วเท่ากัน พวกมันจะลู่เข้าสู่จุดศูนย์เล็งเดียวกัน
 
-### Camera Translation
+### การเคลื่อนที่แบบขนานของกล้อง (Camera Translation)
 
-Let's now assume that the scene is static and that only the camera is
-moving. In this case, all the observed motion in the image will be due
-to the motion of the camera.
+ตอนนี้สมมติว่าฉากนิ่งอยู่กับที่ และมีเพียงกล้องเท่านั้นที่กำลังเคลื่อนที่ ในกรณีนี้ การเคลื่อนไหวทั้งหมดที่สังเกตได้ในภาพจะเกิดจากการเคลื่อนไหวของกล้อง
 
-Let's assume the camera is moving in a straight line with a velocity
-$\dot{\mathbf{T}} = \mathbf{V} = (V_X,V_Y,V_Z)^\mathsf{T}$. The
-translation of the camera after time $t$ will be
-$\mathbf{T} = \mathbf{V} t$. A point in space
-$\mathbf{P} = (X,Y,Z)^\mathsf{T}$, will move with velocity, relative to
-the camera, equal to $\dot{\mathbf{P}} = -\mathbf{V}$. The moving camera
-is equivalent to the case where all the scene points move relative to
-the camera with the same velocity.
+สมมติว่ากล้องกำลังเคลื่อนที่เป็นเส้นตรงด้วยความเร็ว $\dot{\mathbf{T}} = \mathbf{V} = (V_X,V_Y,V_Z)^\mathsf{T}$ การเคลื่อนที่แบบขนานของกล้องหลังจากเวลา $t$ จะเป็น $\mathbf{T} = \mathbf{V} t$ จุดในอวกาศ $\mathbf{P} = (X,Y,Z)^\mathsf{T}$ จะเคลื่อนที่ด้วยความเร็วสัมพัทธ์กับกล้องเท่ากับ $\dot{\mathbf{P}} = -\mathbf{V}$ กล้องที่กำลังเคลื่อนที่เทียบเท่ากับกรณีที่จุดทั้งหมดในฉากเคลื่อนที่สัมพัทธ์กับกล้องด้วยความเร็วเดียวกัน
 
-The 2D motion field by using equation (@eq-motionprojection) is:
+สนามการเคลื่อนไหวแบบ 2 มิติโดยใช้สมการ (@eq-motionprojection) คือ:
 $$\begin{aligned}
 \begin{bmatrix}
 \dot{x} \\
@@ -177,9 +112,7 @@ V_Z
 \end{bmatrix}
 \end{aligned}$${#eq-2d_motion_field_equation}
 
-We can also express the same relationship by making the contribution of
-the camera coordinates more explicit. We can do this by rearranging the
-terms in equation (@eq-2d_motion_field_equation), resulting in:
+เราสามารถแสดงความสัมพันธ์เดียวกันนี้ได้โดยการทำให้การมีส่วนร่วมของพิกัดกล้องมีความชัดเจนยิ่งขึ้น เราสามารถทำได้โดยการจัดเรียงเทอมใหม่ในสมการ (@eq-2d_motion_field_equation) ซึ่งส่งผลให้:
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -199,24 +132,15 @@ y
 \end{bmatrix}
 \end{aligned}$$
 
-Equation (@eq-2d_motion_field_equation) gives a generic expression for
-the observed motion in the camera plane produced by a moving camera
-undergoing a translation (we will see later what happens if we also have
-camera rotation). But let's first look at a few specific scenarios with
-a camera following simple translation trajectories (and no rotations).
+สมการ (@eq-2d_motion_field_equation) แสดงการแสดงออกทั่วไปสำหรับสนามการเคลื่อนไหวที่สังเกตได้บนระนาบกล้องซึ่งเกิดจากกล้องที่กำลังเคลื่อนที่แบบขนาน (เราจะเห็นภายหลังว่าเกิดอะไรขึ้นถ้าเรามีการหมุนของกล้องด้วย) แต่ก่อนอื่นมาดูบางสถานการณ์เฉพาะที่กล้องมีการเคลื่อนที่แบบขนานอย่างง่าย (และไม่มีการหมุน)
 
-#### Lateral camera motion
+#### การเคลื่อนที่แบบด้านข้างของกล้อง (Lateral camera motion)
 
-Consider a camera translating laterally, as shown in
-@fig-camera_lateral_translation. This will happen if you are looking
-through a side window of a car at the scene passing by. In this case,
-the forward velocity is zero, $V_Z=0$.
+พิจารณากล้องที่เคลื่อนที่แบบด้านข้างดังแสดงใน @fig-camera_lateral_translation ซึ่งจะเกิดขึ้นหากคุณมองออกไปนอกหน้าต่างด้านข้างของรถที่กำลังเคลื่อนที่ผ่านฉาก ในกรณีนี้ ความเร็วไปข้างหน้าเป็นศูนย์ $V_Z=0$
 
-![Lateral camera motion parallel to the camera plane.](figures/optical_flow/camera_lateral_translation.png){width="100%" #fig-camera_lateral_translation}
+![การเคลื่อนที่แบบด้านข้างของกล้องขนานกับระนาบกล้อง](figures/optical_flow/camera_lateral_translation.png){width="100%" #fig-camera_lateral_translation}
 
-Under lateral camera motion, using equation (@eq-parallelmotion), we
-have the following relationship between the velocity of a 3D point and
-the apparent velocity of its projection in the image plane:
+ภายใต้การเคลื่อนที่แบบด้านข้างของกล้อง โดยใช้สมการ (@eq-parallelmotion) เรามีความสัมพันธ์ระหว่างความเร็วของจุด 3 มิติกับความเร็วที่ปรากฏของภาพฉายของจุดนั้นบนระนาบภาพดังนี้:
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -231,24 +155,17 @@ V_Y
 \end{bmatrix}
 \end{aligned}$$
 
-The motion field depends on the depth at each location $Z$ as
-illustrated in @fig-camera_lateral_translation_flow. Objects close to
-the camera will appear moving faster than objects farther away. Objects
-that are very far will appear as not moving. This parallax effect is the
-same one used in stereo vision to recover depth. The 2D motion in the
-image place is in the opposite direction to the camera motion.
+สนามการเคลื่อนไหวขึ้นอยู่กับความลึก ณ แต่ละตำแหน่ง $Z$ ดังแสดงใน @fig-camera_lateral_translation_flow วัตถุที่อยู่ใกล้กล้องจะปรากฏเคลื่อนที่เร็วกว่าวัตถุที่อยู่ไกลออกไป วัตถุที่อยู่ไกลมากจะปรากฏว่าไม่เคลื่อนที่ ผลกระทบ Parallax นี้เป็นแบบเดียวกับที่ใช้ใน Stereo Vision เพื่อกู้คืนความลึก การเคลื่อนไหวแบบ 2 มิติบนระนาบภาพมีทิศทางตรงกันข้ามกับการเคลื่อนที่ของกล้อง
 
-![Sketch of the motion field under lateral camera motion. Objects close to the camera will appear to be moving faster than objects farther away. Objects that are very far (like the cloud) will appear to be nearly stationary.](figures/optical_flow/camera_lateral_translation_flow.png){width="100%" #fig-camera_lateral_translation_flow}
+![ภาพร่างของสนามการเคลื่อนไหวภายใต้การเคลื่อนที่แบบด้านข้างของกล้อง วัตถุที่อยู่ใกล้กล้องจะปรากฏเคลื่อนที่เร็วกว่าวัตถุที่อยู่ไกลออกไป วัตถุที่อยู่ไกลมาก (เช่น ก้อนเมฆ) จะปรากฏว่าเกือบจะนิ่งอยู่กับที่](figures/optical_flow/camera_lateral_translation_flow.png){width="100%" #fig-camera_lateral_translation_flow}
 
-#### Camera forward motion and focus of expansion
+#### การเคลื่อนที่ไปข้างหน้าของกล้องและจุดศูนย์กลางของการขยาย (Camera forward motion and focus of expansion)
 
-For a camera moving forward, as illustrated in
-@fig-camera_forward_translation, note that $V_X = V_Y = 0$. In this
-case, the motion is only along the $Z$-axis, $V_Z \neq 0$.
+สำหรับกล้องที่เคลื่อนที่ไปข้างหน้า ดังแสดงใน @fig-camera_forward_translation โปรดทราบว่า $V_X = V_Y = 0$ ในกรณีนี้ การเคลื่อนไหวจะอยู่ตามแกน $Z$ เท่านั้น $V_Z \neq 0$
 
-![Camera moving forward, along the camera axis.](figures/optical_flow/camera_forward_translation.png){width="100%" #fig-camera_forward_translation}
+![กล้องเคลื่อนที่ไปข้างหน้าตามแกนกล้อง](figures/optical_flow/camera_forward_translation.png){width="100%" #fig-camera_forward_translation}
 
-Using equation (@eq-forward_objects), we get:
+โดยใช้สมการ (@eq-forward_objects) เราได้:
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -263,16 +180,9 @@ y
 \end{bmatrix}
 \end{aligned}$${#eq-motion_projection_focus_expansion}
 
-Equation (@eq-motion_projection_focus_expansion) provides a few
-interesting insights. First, the rate of expansion does not depend on
-the focal length $f$. Second, the observed motion only depends on the
-ratio $V_Z/Z$, which is the inverse of the **time to contact**. The time
-to contact, $V_Z/Z$, is the time it will take the camera to reach the
-object located a distance $Z$ when moving at velocity $V_Z$.
+สมการ (@eq-motion_projection_focus_expansion) ให้ข้อมูลเชิงลึกที่น่าสนใจบางประการ ประการแรก อัตราการขยายไม่ขึ้นอยู่กับความยาวโฟกัส $f$ ประการที่สอง การเคลื่อนไหวที่สังเกตได้ขึ้นอยู่กับอัตราส่วน $V_Z/Z$ เท่านั้น ซึ่งเป็นส่วนกลับของ **เวลาที่จะสัมผัส** (time to contact) เวลาที่จะสัมผัส $V_Z/Z$ คือเวลาที่กล้องจะใช้ในการไปถึงวัตถุที่อยู่ห่างออกไป $Z$ เมื่อเคลื่อนที่ด้วยความเร็ว $V_Z$
 
-For a camera moving in an arbitrary direction, that is, with
-$V_X \neq 0$, $V_Y \neq 0$, and $V_Z \neq 0$, using equation
-(@eq-motionprojection) and equation (@eq-motionvanishingpoint) we get:
+สำหรับกล้องที่เคลื่อนที่ในทิศทางใดๆ กล่าวคือ มี $V_X \neq 0$, $V_Y \neq 0$ และ $V_Z \neq 0$ โดยใช้สมการ (@eq-motionprojection) และสมการ (@eq-motionvanishingpoint) เราได้:
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -287,45 +197,28 @@ y - y_{\infty}
 \end{bmatrix}
 \end{aligned}$$
 
-The observed motion is zero at the **focus of expansion**,
-$(x_{\infty}, y_{\infty})$.
+การเคลื่อนไหวที่สังเกตได้จะเป็นศูนย์ที่ **จุดศูนย์กลางของการขยาย** $(x_{\infty}, y_{\infty})$
 
-@fig-camera_forward_translation_flow illustrates the apparent motion
-field for a camera moving toward the center of a wall. Points near the
-center (which will be the point of impact) appear stationary, while
-points in the periphery appear to move faster and away from the center.
-The whole wall expands over time.
+@fig-camera_forward_translation_flow แสดงสนามการเคลื่อนไหวที่ปรากฏสำหรับกล้องที่กำลังเคลื่อนที่เข้าหากึ่งกลางของกำแพง จุดที่อยู่ใกล้กึ่งกลาง (ซึ่งจะเป็นจุดปะทะ) จะปรากฏว่านิ่งอยู่กับที่ ในขณะที่จุดที่อยู่บริเวณขอบจะปรากฏว่าเคลื่อนที่เร็วกว่าและห่างออกจากกึ่งกลาง กำแพงทั้งหมดจะขยายตัวเมื่อเวลาผ่านไป
 
-![Sketch of the motion field when the camera approaches a planar surface. The motion field indicates the rate of expansion of the image, and it is a function of the time to contact. In this example, the focus of expansion is on the center.](figures/optical_flow/camera_forward_translation_flow.png){width="100%" #fig-camera_forward_translation_flow}
+![ภาพร่างของสนามการเคลื่อนไหวเมื่อกล้องเข้าใกล้พื้นผิวระนาบ สนามการเคลื่อนไหวแสดงถึงอัตราการขยายตัวของภาพ และเป็นฟังก์ชันของเวลาที่จะสัมผัส ในตัวอย่างนี้ จุดศูนย์กลางของการขยายอยู่ที่กึ่งกลาง](figures/optical_flow/camera_forward_translation_flow.png){width="100%" #fig-camera_forward_translation_flow}
 
-### Camera Rotation
+### การหมุนของกล้อง (Camera Rotation)
 
-Let's consider a general camera motion undergoing both translation and
-rotation. To compute the motion field with a compact expression, we will
-do a number of simplifications assuming a small motion between
-consecutive frames. After a small time interval, $\Delta t$, the camera
-will move, generating a displacement in the points with respect to the
-camera coordinate system equal to:
+มาพิจารณาการเคลื่อนที่ทั่วไปของกล้องที่ทั้งเคลื่อนที่แบบขนานและหมุน เพื่อคำนวณสนามการเคลื่อนไหวด้วยการแสดงออกที่กระชับ เราจะทำการลดความซับซ้อนหลายประการ โดยสมมติว่ามีการเคลื่อนไหวเล็กน้อยระหว่างเฟรมที่ต่อเนื่องกัน หลังจากช่วงเวลาสั้นๆ $\Delta t$ กล้องจะเคลื่อนที่ ทำให้เกิดการกระจัดในจุดต่างๆ เมื่อเทียบกับระบบพิกัดกล้องเท่ากับ:
 
 $$\mathbf{P}_{t+\Delta t} = - \mathbf{T}_{\Delta t}  + \mathbf{R}_{\Delta t} \mathbf{P}_t
 $$
-where $\mathbf{T}_{\Delta t}$ is the camera translation and
-$\mathbf{R}_{\Delta t}$ is the camera rotation that took place over that
-time interval, $\Delta t$. The velocity of a 3D point with respect to
-the camera will be:
+โดยที่ $\mathbf{T}_{\Delta t}$ คือการเคลื่อนที่แบบขนานของกล้อง และ $\mathbf{R}_{\Delta t}$ คือการหมุนของกล้องที่เกิดขึ้นในช่วงเวลา $\Delta t$ นั้น ความเร็วของจุด 3 มิติเมื่อเทียบกับกล้องจะเป็น:
 $$
 \dot{\mathbf{P}} = \frac{\mathbf{P}_{t+\Delta t} - \mathbf{P}_{t}}{\Delta t} = - \mathbf{V} + \frac{\mathbf{R}_{\Delta t} -\mathbf{I}}{\Delta t} \mathbf{P}_t
 $${#eq-general_camera_motion_equation_full}
 
-To derive the rotation, we consider the **Euler angles**
-(@fig-yaw_pitch_roll) and decompose the rotation using rotations along
-the three axes (yaw, pitch, roll):
+ในการหาค่าการหมุน เราจะพิจารณา **มุม Euler** (@fig-yaw_pitch_roll) และแยกการหมุนออกโดยใช้การหมุนรอบแกนทั้งสาม (Yaw, Pitch, Roll):
 
-![Rotation expressed by Euler angles (yaw, pitch, roll).](figures/optical_flow/yaw_pitch_roll.png){width="40%" #fig-yaw_pitch_roll}
+![การหมุนที่แสดงโดยมุม Euler (yaw, pitch, roll)](figures/optical_flow/yaw_pitch_roll.png){width="40%" #fig-yaw_pitch_roll}
 
-Each angle measures the rotation along the camera-coordinate axes. Using
-this representation of the rotation, the rotation matrix can be written
-as: 
+แต่ละมุมจะวัดการหมุนรอบแกนพิกัดกล้อง เมื่อใช้การแสดงการหมุนนี้ เมทริกซ์การหมุนสามารถเขียนได้ดังนี้: 
 $$\begin{aligned}
 \mathbf{R}_{\Delta t} = 
 \begin{bmatrix}
@@ -344,15 +237,9 @@ $$\begin{aligned}
 0 & -\sin \theta_X &  \cos \theta_X 
 \end{bmatrix}
 \end{aligned}
-$$ In this equation, the sign of the angles are chosen to
-reflect that a rotation of the camera is equivalent to the opposite
-rotation of the 3D point.
+$$ ในสมการนี้ เครื่องหมายของมุมถูกเลือกให้สะท้อนว่าการหมุนของกล้องเทียบเท่ากับการหมุนตรงกันข้ามของจุด 3 มิติ
 
-For a small $\Delta t$, the angles will be small, and we can approximate
-the trigonometric functions, $\cos$ and $\sin$, by
-$\cos \alpha \approx 1$ and $\sin \alpha \approx \alpha$. We can also
-approximate the product $\sin \alpha \sin \beta \approx 0$ as it will
-result in a second-order term.
+สำหรับ $\Delta t$ ที่เล็กน้อย มุมจะเล็ก และเราสามารถประมาณค่าฟังก์ชันตรีโกณมิติ $\cos$ และ $\sin$ โดย $\cos \alpha \approx 1$ และ $\sin \alpha \approx \alpha$ เรายังสามารถประมาณผลคูณ $\sin \alpha \sin \beta \approx 0$ เนื่องจากจะทำให้เกิดเทอมลำดับที่สอง
 
 $$\begin{aligned}
 \mathbf{R}_{\Delta t} \approx 
@@ -388,19 +275,13 @@ $$\mathbf{P}_{t+\Delta t} - \mathbf{P}_{t} = - \mathbf{T}_{\Delta t} + (\mathbf{
 \end{bmatrix}
 \mathbf{P}_t$$ 
 
-The last term corresponds to the cross product in matrix
-form (note that we changed the sign of the matrix to make the cross
-product form more obvious). Therefore, we can rewrite the previous
-expression as: 
+เทอมสุดท้ายสอดคล้องกับ Cross Product ในรูปแบบเมทริกซ์ (โปรดทราบว่าเราเปลี่ยนเครื่องหมายของเมทริกซ์เพื่อให้รูปแบบ Cross Product ชัดเจนยิ่งขึ้น) ดังนั้นเราสามารถเขียนการแสดงออกก่อนหน้านี้ใหม่ได้เป็น: 
 
 $$\mathbf{P}_{t+\Delta t} - \mathbf{P}_{t} = 
 - \mathbf{T}_{\Delta t} - \boldsymbol{\theta} \times \mathbf{P}_t
 $$
 
-where
-$\boldsymbol{\theta}=(\theta_X,\theta_Y, \theta_Z)$. Substituting this
-expression into equation (@eq-general_camera_motion_equation_full), we
-get the expression of the motion of a 3D point:
+โดยที่ $\boldsymbol{\theta}=(\theta_X,\theta_Y, \theta_Z)$ การแทนการแสดงออกนี้ลงในสมการ (@eq-general_camera_motion_equation_full) เราจะได้การแสดงออกของการเคลื่อนไหวของจุด 3 มิติ:
 
 $$\dot{\mathbf{P}} = - \mathbf{V} - \mathbf{W} \times \mathbf{P}_t =
 -\begin{bmatrix}
@@ -415,9 +296,7 @@ W_Z X - W_X Z \\
 -W_Y X + W_X Y 
 \end{bmatrix}$$ 
 
-where $\mathbf{W}$ is the angular velocity
-$\mathbf{W}=(W_X,W_Y,W_Z)$. Now we are ready to compute the 2D motion
-field by using equation (@eq-motionprojection): 
+โดยที่ $\mathbf{W}$ คือความเร็วเชิงมุม $\mathbf{W}=(W_X,W_Y,W_Z)$ ตอนนี้เราพร้อมที่จะคำนวณสนามการเคลื่อนไหว 2 มิติโดยใช้สมการ (@eq-motionprojection): 
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -446,8 +325,7 @@ W_Z X - W_X Z \\
 \end{bmatrix}
 \end{aligned}$$
 
-This expression can be rewritten as, using $x=f \, X/Z$ and
-$y=f \, Y/Z$: 
+การแสดงออกนี้สามารถเขียนใหม่ได้โดยใช้ $x=f \, X/Z$ และ $y=f \, Y/Z$: 
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -477,15 +355,9 @@ W_Z
 \end{bmatrix}
 \end{aligned}$${#eq-2d_motion_field_from_translation_and_rotation} 
 
-This is the expression we were looking for. It relates
-the 2D motion field with the camera velocity and rotation. The matrices
-are only a function of the intrinsic camera parameters (focal length,
-$f$) and the camera coordinates. Note that this expression is only valid
-for small displacements.
+นี่คือการแสดงออกที่เรากำลังมองหา มันเชื่อมโยงสนามการเคลื่อนไหว 2 มิติกับความเร็วและการหมุนของกล้อง เมทริกซ์เป็นฟังก์ชันของพารามิเตอร์กล้องภายใน (ความยาวโฟกัส $f$) และพิกัดกล้องเท่านั้น โปรดทราบว่าการแสดงออกนี้ใช้ได้เฉพาะกับการกระจัดเล็กน้อยเท่านั้น
 
-In the previous section we saw what happens when there is no rotation;
-now we can focus on the case when there is only camera rotation, that is
-$V_X=V_Y=V_Z=0$, 
+ในส่วนก่อนหน้านี้ เราได้เห็นสิ่งที่เกิดขึ้นเมื่อไม่มีการหมุน ตอนนี้เราสามารถมุ่งเน้นไปที่กรณีที่มีเพียงการหมุนของกล้องเท่านั้น นั่นคือ $V_X=V_Y=V_Z=0$
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -505,15 +377,9 @@ W_Z
 \end{bmatrix}
 \end{aligned}$$
 
-The first thing to notice is that the 2D motion field does not depend on
-the 3D scene structure, $Z$, and it is only a function of the rotational
-velocity and the camera parameters. Therefore, under camera rotation we
-can not learn anything about the scene by observing the motion field.
-The only thing we can learn from the 2D motion field is about the motion
-of the camera.
+สิ่งแรกที่สังเกตได้คือ สนามการเคลื่อนไหว 2 มิติไม่ขึ้นอยู่กับโครงสร้างฉาก 3 มิติ $Z$ และเป็นฟังก์ชันของความเร็วเชิงมุมและพารามิเตอร์กล้องเท่านั้น ดังนั้น ภายใต้การหมุนของกล้อง เราไม่สามารถเรียนรู้สิ่งใดเกี่ยวกับฉากได้จากการสังเกตสนามการเคลื่อนไหว สิ่งเดียวที่เราเรียนรู้ได้จากสนามการเคลื่อนไหว 2 มิติคือการเคลื่อนไหวของกล้อง
 
-Let's consider first rotation along the camera optical axis, that is
-$W_X=W_Y=0$. In this case the motion field is: 
+ลองพิจารณาการหมุนรอบแกน Optical Axis ของกล้องก่อน นั่นคือ $W_X=W_Y=0$ ในกรณีนี้ สนามการเคลื่อนไหวคือ: 
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -527,15 +393,11 @@ $$\begin{aligned}
 \end{bmatrix}
 W_Z 
 \end{aligned}$$ 
-The 2D motion field at each location $(x,y)$ will point
-in the orthogonal direction to the vector that connects that point with
-the origin (@fig-motion_wz). The motion field does not depend on the
-focal length, $f$.
+สนามการเคลื่อนไหว 2 มิติ ณ แต่ละตำแหน่ง $(x,y)$ จะชี้ในทิศทางตั้งฉากกับเวกเตอร์ที่เชื่อมจุดนั้นกับจุดกำเนิด (@fig-motion_wz) สนามการเคลื่อนไหวไม่ขึ้นอยู่กับความยาวโฟกัส $f$
 
-![Motion field for a rotating camera around the optical axis, $W_X=W_Y=0$.](figures/optical_flow/motion_wz.png){width="50%" #fig-motion_wz}
+![สนามการเคลื่อนไหวสำหรับกล้องที่หมุนรอบแกน Optical Axis, $W_X=W_Y=0$](figures/optical_flow/motion_wz.png){width="50%" #fig-motion_wz}
 
-If $W_Z=0$, then the rotation along $W_X$ or $W_Y$ will produce similar
-2D motion fields, so let's consider $W_X=0$. We have: 
+ถ้า $W_Z=0$ การหมุนรอบ $W_X$ หรือ $W_Y$ จะสร้างสนามการเคลื่อนไหว 2 มิติที่คล้ายกัน ดังนั้นมาพิจารณา $W_X=0$ เราได้: 
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -551,39 +413,19 @@ xy
 W_Y 
 \end{aligned}$$ 
 
-In this case, the focal length $f$ will have a strong
-effect on the appearance of the motion field. For very large $f$, we can
-approximate the 2D motion field by $\dot{x} \approx f W_Y$ and
-$\dot{y} \approx 0$. The resulting motion field is approximately
-constant across the entire image and looks like lateral translation
-motion. For very small $f$, the motion field will be similar to the one
-produced by a homography and it will be very different to a lateral
-camera motion. The flows shown in @fig-motion_wy_f03_f1_f3 correspond
-to $f=1/3$, $f=1$, and $f=3$.
+ในกรณีนี้ ความยาวโฟกัส $f$ จะมีผลอย่างมากต่อลักษณะของสนามการเคลื่อนไหว สำหรับ $f$ ที่ใหญ่มาก เราสามารถประมาณสนามการเคลื่อนไหว 2 มิติโดย $\dot{x} \approx f W_Y$ และ $\dot{y} \approx 0$ สนามการเคลื่อนไหวที่ได้จะคงที่โดยประมาณทั่วทั้งภาพและดูเหมือนการเคลื่อนที่แบบขนานด้านข้าง สำหรับ $f$ ที่เล็กมาก สนามการเคลื่อนไหวจะคล้ายกับที่เกิดจาก Homography และจะแตกต่างอย่างมากจากการเคลื่อนที่แบบขนานด้านข้าง ภาพที่แสดงใน @fig-motion_wy_f03_f1_f3 สอดคล้องกับ $f=1/3$, $f=1$ และ $f=3$
 
-![Motion flows corresponding to a rotation around the 
-$Y$-axis. (left) $f = 1/3$. (middle) $f = 1$. (right) $f = 3$.](figures/optical_flow/camera_motion_field_rotation_three_f.png){width="100%" #fig-motion_wy_f03_f1_f3}
+![สนามการเคลื่อนไหวที่สอดคล้องกับการหมุนรอบแกน $Y$ (ซ้าย) $f = 1/3$ (กลาง) $f = 1$ (ขวา) $f = 3$](figures/optical_flow/camera_motion_field_rotation_three_f.png){width="100%" #fig-motion_wy_f03_f1_f3}
 
-Camera rotation around the $Y$-axis does not inform about the scene
-structure, but it informs about the camera parameters. The magnitude of
-$W_Y$ only affects the scaling of the motion vectors, but it does not
-change their orientation.
+การหมุนของกล้องรอบแกน $Y$ ไม่ให้ข้อมูลเกี่ยวกับโครงสร้างฉาก แต่ให้ข้อมูลเกี่ยวกับพารามิเตอร์กล้อง ขนาดของ $W_Y$ มีผลต่อการปรับขนาดของเวกเตอร์การเคลื่อนไหวเท่านั้น แต่ไม่เปลี่ยนทิศทางของเวกเตอร์
 
-In the case of camera rotation, for a large angle (or a large
-$\Delta t$), the relationship between the image at time $t$ and the
-image at time $t+\Delta t$ is a homography.
+ในกรณีของการหมุนของกล้อง สำหรับมุมขนาดใหญ่ (หรือ $\Delta t$ ขนาดใหญ่) ความสัมพันธ์ระหว่างภาพที่เวลา $t$ และภาพที่เวลา $t+\Delta t$ คือ Homography
 
-### Motion under Varying Focal Length
+### การเคลื่อนไหวภายใต้ความยาวโฟกัสที่เปลี่ยนแปลง (Motion under Varying Focal Length)
 
-Before moving into motion estimation, let's consider one final scenario:
-a static camera observing a static scene, but the focal length changes
-over time. What will the motion field be? In this setting, despite that
-there is not motion in the scene, the focal length of the camera changes
-over time, producing motion in the image plane. If the focal length
-increases, it will seem as if we are zooming into the scene. Would it be
-similar to a forward motion?
+ก่อนที่จะเข้าสู่การประมาณค่าการเคลื่อนไหว มาพิจารณาสถานการณ์สุดท้าย: กล้องนิ่งที่สังเกตฉากนิ่ง แต่ความยาวโฟกัสเปลี่ยนแปลงไปตามเวลา สนามการเคลื่อนไหวจะเป็นอย่างไร? ในสถานการณ์นี้ แม้ว่าจะไม่มีการเคลื่อนไหวในฉาก แต่ความยาวโฟกัสของกล้องเปลี่ยนแปลงไปตามเวลา ทำให้เกิดการเคลื่อนไหวบนระนาบภาพ ถ้าความยาวโฟกัสเพิ่มขึ้น จะดูเหมือนว่าเรากำลังซูมเข้าไปในฉาก มันจะคล้ายกับการเคลื่อนที่ไปข้างหน้าหรือไม่?
 
-Starting from the perspective projection equation, 
+เริ่มจากสมการ Perspective Projection 
 $$\begin{aligned}
 \begin{bmatrix}
 x \\
@@ -594,8 +436,7 @@ y
 X \\
 Y
 \end{bmatrix}
-\end{aligned}$${#eq-pers_proj} If we compute the temporal derivative where only $f$
-varies over time, we get: 
+\end{aligned}$${#eq-pers_proj} ถ้าเราคำนวณอนุพันธ์ตามเวลา โดยที่ $f$ เท่านั้นที่แปรเปลี่ยนตามเวลา เราได้: 
 
 $$\begin{aligned}
 \begin{bmatrix}
@@ -615,23 +456,10 @@ y
 \end{bmatrix}
 \end{aligned}$$
 
-The last expression is obtained by using equation (@eq-pers_proj). As
-the equation shows, changing the focal length only results in a scaling
-of the projected image on the image plane. It does not create any
-parallax. As the sensor has finite size, changing the focal length
-results in a zoom and a crop. The motion field does not depend on the 3D
-scene structure. Therefore, images taken by a pinhole camera from the
-same viewpoint but with different focal lengths do not provide depth
-information about the scene. This is an example where there is a 2D
-motion field even when there is no motion in the scene.
+การแสดงออกสุดท้ายได้มาจากการใช้สมการ (@eq-pers_proj) ดังที่สมการแสดง การเปลี่ยนความยาวโฟกัสเพียงแค่ส่งผลให้ภาพฉายบนระนาบภาพถูกปรับขนาดเท่านั้น มันไม่สร้าง Parallax ใดๆ เนื่องจากเซ็นเซอร์มีขนาดจำกัด การเปลี่ยนความยาวโฟกัสทำให้เกิดการซูมและครอป สนามการเคลื่อนไหวไม่ขึ้นอยู่กับโครงสร้างฉาก 3 มิติ ดังนั้น ภาพที่ถ่ายด้วยกล้อง Pinhole จากมุมมองเดียวกันแต่มีความยาวโฟกัสต่างกัน ไม่ให้ข้อมูลความลึกเกี่ยวกับฉาก นี่เป็นตัวอย่างหนึ่งที่เกิดสนามการเคลื่อนไหว 2 มิติแม้ว่าจะไม่มีการเคลื่อนไหวในฉากก็ตาม
 
-## Concluding Remarks
+## ข้อสรุป
 
-As we did in @sec-imaging, in this chapter we have focused on
-formulating the problem of image formation: How does the 3D motion in
-the world appear once it is projected on the image plane?
+ดังที่เราได้ทำใน @sec-imaging ในบทนี้เราได้เน้นไปที่การกำหนดปัญหาการสร้างภาพ: การเคลื่อนไหว 3 มิติในโลกปรากฏอย่างไรเมื่อถูกฉายบนระนาบภาพ?
 
-But the goal of vision is to inverse this projection and recover the 3D
-scene structure. In the upcoming chapters, we will proceed on the path
-begun in @sec-motion_estimation, and we will study how to
-estimate motion from pixels.
+แต่เป้าหมายของ Vision คือการผันกลับการฉายนี้และกู้คืนโครงสร้างฉาก 3 มิติ ในบทต่อๆ ไป เราจะดำเนินการตามเส้นทางที่เริ่มไว้ใน @sec-motion_estimation และเราจะศึกษาว่าการประมาณค่าการเคลื่อนไหวจากพิกเซลทำได้อย่างไร
